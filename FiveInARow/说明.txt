@@ -1,0 +1,6 @@
+截图功能的实现是通过BmpScreen 类实现的，使用时在工程中添加
+bmpScreen.h 和bmpScreen.cpp 文件，需要截图时定义一个bmpScreen 类的对象，
+再使用成员函数void screenShot(int width,int height,int left,int top,CString name)来
+进行截图。参数width 表示截图区域的宽度，height 表示截图区域的高度，left 表
+示截图区域左上角在主界面坐标系中的横坐标值，top 表示截图区域左上角在主
+界面坐标系中的纵坐标值，name 表示存放文件的路径名
