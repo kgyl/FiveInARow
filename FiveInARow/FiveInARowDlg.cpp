@@ -35,6 +35,7 @@ BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
     ON_WM_PAINT()
 END_MESSAGE_MAP()
 
+// 关于对话框背景绘制
 void CAboutDlg::OnPaint()
 {
     CPaintDC dc(this); // device context for painting
@@ -80,6 +81,10 @@ ON_BN_CLICKED(IDC_BUTTON2, &CFiveInARowDlg::OnBnClickedButton2)
 ON_BN_CLICKED(IDC_BUTTON3, &CFiveInARowDlg::OnBnClickedButton3)
 ON_BN_CLICKED(IDC_BUTTON4, &CFiveInARowDlg::OnBnClickedButton4)
 ON_BN_CLICKED(IDC_BUTTON5, &CFiveInARowDlg::OnBnClickedButton5)
+ON_BN_CLICKED(IDC_BUTTON_NewGame, &CFiveInARowDlg::OnBnClickedButtonNewgame)
+ON_BN_CLICKED(IDC_BUTTON_Introduction, &CFiveInARowDlg::OnBnClickedButtonIntroduction)
+ON_BN_CLICKED(IDC_BUTTON_ChooseBG, &CFiveInARowDlg::OnBnClickedButtonChoosebg)
+ON_BN_CLICKED(IDC_BUTTON_PlayMusic, &CFiveInARowDlg::OnBnClickedButtonPlaymusic)
 END_MESSAGE_MAP()
 BOOL CFiveInARowDlg::OnInitDialog()
 {
@@ -122,33 +127,43 @@ void CFiveInARowDlg::OnSysCommand(UINT nID, LPARAM lParam)
 }
 void CFiveInARowDlg::OnPaint()
 {
-	if (IsIconic())
-	{
-		CPaintDC dc(this);
-		SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
-		int cxIcon = GetSystemMetrics(SM_CXICON);
-		int cyIcon = GetSystemMetrics(SM_CYICON);
-		CRect rect;
-		GetClientRect(&rect);
-		int x = (rect.Width() - cxIcon + 1) / 2;
-		int y = (rect.Height() - cyIcon + 1) / 2;
-		dc.DrawIcon(x, y, m_hIcon);
-	}
-	else
-	{
-		CPaintDC dc(this);
-		CBitmap bmp;
-		BITMAP bm;
-		bmp.LoadBitmap(IDB_BITMAP_BK);
-		bmp.GetObject(sizeof(BITMAP), &bm);
-		CDC MemDC;
-		MemDC.CreateCompatibleDC(&dc);
-		CBitmap *pOldBitmap = MemDC.SelectObject(&bmp);
-		dc.BitBlt(0, 0, bm.bmWidth, bm.bmHeight, &MemDC, 0, 0, SRCCOPY);
-		MemDC.SelectObject(pOldBitmap);
-		m_Manager.Show(&dc);
-		CDialogEx::OnPaint();
-	}
+    if (IsIconic())
+    {
+        CPaintDC dc(this);
+        SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
+        int cxIcon = GetSystemMetrics(SM_CXICON);
+        int cyIcon = GetSystemMetrics(SM_CYICON);
+        CRect rect;
+        GetClientRect(&rect);
+        int x = (rect.Width() - cxIcon + 1) / 2;
+        int y = (rect.Height() - cyIcon + 1) / 2;
+        dc.DrawIcon(x, y, m_hIcon);
+    }
+    else
+    {
+        CPaintDC dc(this);
+        CRect rect;
+        GetClientRect(&rect);
+        
+        if (m_hasCustomBk && m_bkImage.IsNull() == FALSE)
+        {
+            m_bkImage.StretchBlt(dc.GetSafeHdc(), 0, 0, rect.Width(), rect.Height(), SRCCOPY);
+        }
+        else
+        {
+            CBitmap bmp;
+            BITMAP bm;
+            bmp.LoadBitmap(IDB_BITMAP_BK);
+            bmp.GetObject(sizeof(BITMAP), &bm);
+            CDC MemDC;
+            MemDC.CreateCompatibleDC(&dc);
+            CBitmap *pOldBitmap = MemDC.SelectObject(&bmp);
+            dc.BitBlt(0, 0, bm.bmWidth, bm.bmHeight, &MemDC, 0, 0, SRCCOPY);
+            MemDC.SelectObject(pOldBitmap);
+        }
+        m_Manager.Show(&dc);
+        CDialogEx::OnPaint();
+    }
 }
 HCURSOR CFiveInARowDlg::OnQueryDragIcon()
 {
@@ -156,10 +171,6 @@ HCURSOR CFiveInARowDlg::OnQueryDragIcon()
 }
 void CFiveInARowDlg::OnLButtonUp(UINT nFlags, CPoint point)
 {
-	if (NewGame(point.x, point.y))
-		return;
-	if (About(point.x, point.y))
-		return;
 	if (!m_bState)
 	{
 		AfxMessageBox("请选择【开始】按钮开始新的游戏，按【ESC】键退出游戏");
@@ -200,32 +211,7 @@ void CFiveInARowDlg::OnLButtonUp(UINT nFlags, CPoint point)
 		AfxMessageBox("不可以重复落子");
 	CDialogEx::OnLButtonUp(nFlags, point);
 }
-bool CFiveInARowDlg::NewGame(int x, int y)
-{
-	int x0 = 35, y0 = 150, x1 = 200, y1 = 185;
-	if ((x >= x0 && x <= x1) && (y >= y0 && y <= y1))
-	{
-		m_Manager.NewGame();
-		Invalidate();
-		m_iTime = 0;
-		SetTimer(1, 1000, NULL);
-		m_bState = true;
-		return true;
-	}
-	return false;
-}
 
-bool CFiveInARowDlg::About(int x, int y)
-{
-	int x0 = 35, y0 = 70, x1 = 200, y1 = 95;
-	if ((x >= x0 && x <= x1) && (y >= y0 && y <= y1))
-	{
-		CAboutDlg dlg;
-		dlg.DoModal();
-		return true;
-	}
-	return false;
-}
 
 void CFiveInARowDlg::OnTimer(UINT_PTR nIDEvent)
 {
@@ -288,4 +274,50 @@ void CFiveInARowDlg::OnBnClickedButton5()
 	bmpScreen screen;
 	// 调用 screenShot 函数进行截图，并保存到文件中。截图的大小是 1000x800 像素，位置是屏幕左上角的（0, 0）处
 	screen.screenShot(1000, 800, 0, 0, "screenshot.bmp");
+}
+
+// 更换图片
+void CFiveInARowDlg::OnBnClickedButtonChoosebg()
+{
+	CFileDialog dlg(TRUE, _T("图片文件"), NULL, OFN_FILEMUSTEXIST, _T("图片文件 (*.bmp;*.jpg;*.png)|*.bmp;*.jpg;*.png||"));
+    if (dlg.DoModal() == IDOK)
+    {
+        CString path = dlg.GetPathName();
+
+        // 如果之前有图像，释放
+        if (!m_bkImage.IsNull())
+            m_bkImage.Destroy();
+
+        if (m_bkImage.Load(path) == S_OK)
+        {
+            m_hasCustomBk = true;
+            Invalidate(); // 触发重绘
+        }
+        else
+        {
+            AfxMessageBox(_T("加载背景图像失败。"));
+        }
+    }
+}
+
+
+void CFiveInARowDlg::OnBnClickedButtonNewgame()
+{
+	m_Manager.NewGame();
+	Invalidate();
+	m_iTime = 0;
+	SetTimer(1, 1000, NULL);
+	m_bState = true;
+}
+
+void CFiveInARowDlg::OnBnClickedButtonIntroduction()
+{
+	CAboutDlg dlg;
+	dlg.DoModal();
+}
+
+
+void CFiveInARowDlg::OnBnClickedButtonPlaymusic()
+{
+	// TODO: 在此添加控件通知处理程序代码
 }
