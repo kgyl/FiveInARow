@@ -17,6 +17,7 @@ public:
 	{
 		IDD = IDD_ABOUTBOX
 	};
+	afx_msg void OnPaint();
 
 protected:
 	virtual void DoDataExchange(CDataExchange *pDX); //
@@ -31,7 +32,34 @@ void CAboutDlg::DoDataExchange(CDataExchange *pDX)
 	CDialogEx::DoDataExchange(pDX);
 }
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
+    ON_WM_PAINT()
 END_MESSAGE_MAP()
+
+void CAboutDlg::OnPaint()
+{
+    CPaintDC dc(this); // device context for painting
+    CBitmap bmp;
+    bmp.LoadBitmap(IDB_BITMAP_ABOUT);
+
+    BITMAP bm;
+    bmp.GetObject(sizeof(BITMAP), &bm);
+
+    CDC memDC;
+    memDC.CreateCompatibleDC(&dc);
+    CBitmap* pOldBitmap = memDC.SelectObject(&bmp);
+
+    // æ”÷–ªÊ÷∆Õº∆¨
+    CRect rect;
+    GetClientRect(&rect);
+    int x = (rect.Width() - bm.bmWidth) / 2;
+    int y = (rect.Height() - bm.bmHeight) / 2;
+
+    dc.BitBlt(x, y, bm.bmWidth, bm.bmHeight, &memDC, 0, 0, SRCCOPY);
+
+    memDC.SelectObject(pOldBitmap);
+}
+
+
 CFiveInARowDlg::CFiveInARowDlg(CWnd *pParent /*=NULL*/)
 	: CDialogEx(CFiveInARowDlg::IDD, pParent)
 {
