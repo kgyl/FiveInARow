@@ -76,15 +76,14 @@ ON_WM_PAINT()
 ON_WM_QUERYDRAGICON()
 ON_WM_LBUTTONUP()
 ON_WM_TIMER()
-ON_BN_CLICKED(IDC_BUTTON1, &CFiveInARowDlg::OnBnClickedButton1)
-ON_BN_CLICKED(IDC_BUTTON2, &CFiveInARowDlg::OnBnClickedButton2)
-ON_BN_CLICKED(IDC_BUTTON3, &CFiveInARowDlg::OnBnClickedButton3)
-ON_BN_CLICKED(IDC_BUTTON4, &CFiveInARowDlg::OnBnClickedButton4)
-ON_BN_CLICKED(IDC_BUTTON5, &CFiveInARowDlg::OnBnClickedButton5)
 ON_BN_CLICKED(IDC_BUTTON_NewGame, &CFiveInARowDlg::OnBnClickedButtonNewgame)
 ON_BN_CLICKED(IDC_BUTTON_Introduction, &CFiveInARowDlg::OnBnClickedButtonIntroduction)
 ON_BN_CLICKED(IDC_BUTTON_ChooseBG, &CFiveInARowDlg::OnBnClickedButtonChoosebg)
 ON_BN_CLICKED(IDC_BUTTON_PlayMusic, &CFiveInARowDlg::OnBnClickedButtonPlaymusic)
+ON_BN_CLICKED(IDC_BUTTON_StopMusic, &CFiveInARowDlg::OnBnClickedButtonStopmusic)
+ON_BN_CLICKED(IDC_BUTTON_Withdraw, &CFiveInARowDlg::OnBnClickedButtonWithdraw)
+ON_BN_CLICKED(IDC_BUTTON_Quit, &CFiveInARowDlg::OnBnClickedButtonQuit)
+ON_BN_CLICKED(IDC_BUTTON_Screenshot, &CFiveInARowDlg::OnBnClickedButtonScreenshot)
 END_MESSAGE_MAP()
 BOOL CFiveInARowDlg::OnInitDialog()
 {
@@ -151,16 +150,48 @@ void CFiveInARowDlg::OnPaint()
         }
         else
         {
-            CBitmap bmp;
-            BITMAP bm;
-            bmp.LoadBitmap(IDB_BITMAP_BK);
-            bmp.GetObject(sizeof(BITMAP), &bm);
-            CDC MemDC;
-            MemDC.CreateCompatibleDC(&dc);
-            CBitmap *pOldBitmap = MemDC.SelectObject(&bmp);
-            dc.BitBlt(0, 0, bm.bmWidth, bm.bmHeight, &MemDC, 0, 0, SRCCOPY);
-            MemDC.SelectObject(pOldBitmap);
+			// 默认背景图（从资源或路径加载）
+			CImage defaultBk;
+			HRESULT hr = defaultBk.Load(_T("res\\IMG_202506095120_1024x768.jpg"));  // 或直接资源 ID
+
+			if (SUCCEEDED(hr))
+			{
+				defaultBk.StretchBlt(dc.GetSafeHdc(), 0, 0, rect.Width(), rect.Height(), SRCCOPY);
+			}
+			else
+			{
+				AfxMessageBox(_T("默认背景图像加载失败！"));
+			}
         }
+
+		// 2. 绘制棋盘线（网格）
+		double d = CChess::m_d;
+		int dx = CChess::m_dx + d * 0.5;
+		int dy = CChess::m_dy + d * 0.5;
+		int gridSize = 15;
+
+		CPen pen(PS_SOLID, 3, RGB(0, 0, 0)); // 黑色实线
+		CPen* pOldPen = dc.SelectObject(&pen);
+
+		// 横线
+		for (int i = 0; i < gridSize; ++i)
+		{
+			int y = dy + i * d;
+			dc.MoveTo(dx, y);
+			dc.LineTo(dx + (gridSize - 1) * d, y);
+		}
+
+		// 竖线
+		for (int j = 0; j < gridSize; ++j)
+		{
+			int x = dx + j * d;
+			dc.MoveTo(x, dy);
+			dc.LineTo(x, dy + (gridSize - 1) * d);
+		}
+
+		dc.SelectObject(pOldPen);
+		pen.DeleteObject();
+
         m_Manager.Show(&dc);
         CDialogEx::OnPaint();
     }
@@ -237,19 +268,19 @@ void CFiveInARowDlg::OnTimer(UINT_PTR nIDEvent)
 	CDialogEx::OnTimer(nIDEvent);
 }
 
-void CFiveInARowDlg::OnBnClickedButton1()
+void CFiveInARowDlg::OnBnClickedButtonPlaymusic()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	PlaySound(MAKEINTRESOURCE(IDR_WAVE1), AfxGetResourceHandle(), SND_ASYNC | SND_RESOURCE | SND_NODEFAULT);
 }
 
-void CFiveInARowDlg::OnBnClickedButton2()
+void CFiveInARowDlg::OnBnClickedButtonStopmusic()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	PlaySound(NULL, NULL, SND_FILENAME | SND_ASYNC);
 }
 
-void CFiveInARowDlg::OnBnClickedButton3()
+void CFiveInARowDlg::OnBnClickedButtonWithdraw()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	m_Manager.m_nChess--;											  // 让最大落子数减1
@@ -258,7 +289,7 @@ void CFiveInARowDlg::OnBnClickedButton3()
 	UpdateWindow();													  // 消息提前
 }
 
-void CFiveInARowDlg::OnBnClickedButton4()
+void CFiveInARowDlg::OnBnClickedButtonQuit()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	int iRet = AfxMessageBox("要退出程序吗？单击“确定”按钮退出，单击“取消”按钮继续运行！", MB_OKCANCEL | MB_ICONQUESTION);
@@ -267,7 +298,7 @@ void CFiveInARowDlg::OnBnClickedButton4()
 		CDialogEx::SendMessage(WM_CLOSE);
 }
 
-void CFiveInARowDlg::OnBnClickedButton5()
+void CFiveInARowDlg::OnBnClickedButtonScreenshot()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	// 创建 BmpScreen 类对象
@@ -314,10 +345,4 @@ void CFiveInARowDlg::OnBnClickedButtonIntroduction()
 {
 	CAboutDlg dlg;
 	dlg.DoModal();
-}
-
-
-void CFiveInARowDlg::OnBnClickedButtonPlaymusic()
-{
-	// TODO: 在此添加控件通知处理程序代码
 }

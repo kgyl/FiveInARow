@@ -80,7 +80,7 @@ bool CChessManager::CheckRows()
 				else
 				{
 					color = pQz->GetColor();
-					iCount = i;
+					iCount = 1;
 				}
 			}
 			else

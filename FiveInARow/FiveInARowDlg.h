@@ -26,13 +26,12 @@ public:
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	//bool NewGame(int x,int y);
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
-	afx_msg void OnBnClickedButton1();
-	afx_msg void OnBnClickedButton2();
-	afx_msg void OnBnClickedButton3();
-	afx_msg void OnBnClickedButton4();
-	afx_msg void OnBnClickedButton5();
 	afx_msg void OnBnClickedButtonNewgame();
 	afx_msg void OnBnClickedButtonIntroduction();
 	afx_msg void OnBnClickedButtonChoosebg();
 	afx_msg void OnBnClickedButtonPlaymusic();
+	afx_msg void OnBnClickedButtonStopmusic();
+	afx_msg void OnBnClickedButtonWithdraw();
+	afx_msg void OnBnClickedButtonQuit();
+	afx_msg void OnBnClickedButtonScreenshot();
 };
