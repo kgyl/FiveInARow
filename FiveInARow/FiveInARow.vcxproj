@@ -133,6 +133,11 @@
   <ItemGroup>
     <Media Include="..\..\..\..\..\..\FiveInARow111\FiveInARow\111.wav" />
     <Media Include="..\111.wav" />
+    <Media Include="res\background_music.wav" />
+    <Media Include="res\drop.wav" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\bk1.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

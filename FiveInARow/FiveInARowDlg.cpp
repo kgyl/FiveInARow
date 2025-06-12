@@ -84,6 +84,7 @@ ON_BN_CLICKED(IDC_BUTTON_StopMusic, &CFiveInARowDlg::OnBnClickedButtonStopmusic)
 ON_BN_CLICKED(IDC_BUTTON_Withdraw, &CFiveInARowDlg::OnBnClickedButtonWithdraw)
 ON_BN_CLICKED(IDC_BUTTON_Quit, &CFiveInARowDlg::OnBnClickedButtonQuit)
 ON_BN_CLICKED(IDC_BUTTON_Screenshot, &CFiveInARowDlg::OnBnClickedButtonScreenshot)
+ON_MESSAGE(MM_MCINOTIFY, &CFiveInARowDlg::OnMciNotify)
 END_MESSAGE_MAP()
 BOOL CFiveInARowDlg::OnInitDialog()
 {
@@ -210,6 +211,7 @@ void CFiveInARowDlg::OnLButtonUp(UINT nFlags, CPoint point)
 	int r = m_Manager.Add(point.x, point.y);
 	if (r == 0)
 	{
+		sndPlaySound(MAKEINTRESOURCE(IDR_WAVE2), SND_ASYNC | SND_RESOURCE);
 		CClientDC dc(this);
 		m_Manager.Show(&dc);
 		if (m_Manager.GameOver())
@@ -268,16 +270,63 @@ void CFiveInARowDlg::OnTimer(UINT_PTR nIDEvent)
 	CDialogEx::OnTimer(nIDEvent);
 }
 
+LRESULT CFiveInARowDlg::OnMciNotify(WPARAM wParam, LPARAM lParam)
+{
+	// 只在播放完成时（MCI_NOTIFY_SUCCESSFUL）自动 replay
+	if (wParam == MCI_NOTIFY_SUCCESSFUL)
+	{
+		playMusic();
+	}
+	return 0;
+}
+
+void CFiveInARowDlg::playMusic() {
+	TCHAR exePath[MAX_PATH]{ 0 };
+	GetModuleFileName(nullptr, exePath, MAX_PATH);
+	CString folder = CString(exePath);
+	folder = folder.Left(folder.ReverseFind('\\'));
+
+	// 拼接成 res\background_music.wav 的完整路径
+	CString bgmPath;
+	bgmPath.Format(_T("%s\\res\\background_music.wav"), folder);
+
+	// Debug 输出：检查拼接结果
+	//AfxMessageBox(bgmPath);
+
+	// 若文件不存在，提醒
+	if (!PathFileExists(bgmPath))
+	{
+		AfxMessageBox(_T("背景音乐文件不存在！"));
+		return;
+	}
+
+	// 关闭旧 alias
+	mciSendString(_T("close BGM"), nullptr, 0, nullptr);
+
+	// 打开并循环播放
+	CString cmd;
+	cmd.Format(_T("open \"%s\" type waveaudio alias BGM"), bgmPath);
+	//AfxMessageBox(cmd);
+	if (mciSendString(cmd, nullptr, 0, nullptr) == 0)
+	{
+		mciSendString(_T("play BGM notify"), nullptr, 0, m_hWnd);
+	}
+	else
+	{
+		AfxMessageBox(_T("背景音乐打开失败！"));
+	}
+}
+
 void CFiveInARowDlg::OnBnClickedButtonPlaymusic()
 {
-	// TODO: 在此添加控件通知处理程序代码
-	PlaySound(MAKEINTRESOURCE(IDR_WAVE1), AfxGetResourceHandle(), SND_ASYNC | SND_RESOURCE | SND_NODEFAULT);
+	playMusic();
 }
 
 void CFiveInARowDlg::OnBnClickedButtonStopmusic()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	PlaySound(NULL, NULL, SND_FILENAME | SND_ASYNC);
+	mciSendString(_T("stop BGM"), nullptr, 0, nullptr);
+	mciSendString(_T("close BGM"), nullptr, 0, nullptr);
 }
 
 void CFiveInARowDlg::OnBnClickedButtonWithdraw()

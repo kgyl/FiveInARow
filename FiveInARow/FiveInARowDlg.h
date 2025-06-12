@@ -25,6 +25,8 @@ protected:
 public:
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	//bool NewGame(int x,int y);
+	void playMusic();
+	afx_msg LRESULT OnMciNotify(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnBnClickedButtonNewgame();
 	afx_msg void OnBnClickedButtonIntroduction();
