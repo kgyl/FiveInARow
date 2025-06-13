@@ -66,6 +66,9 @@
     <ClInclude Include="bmpScreen.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="AIPlayer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FiveInARow.cpp">
@@ -86,6 +89,9 @@
     <ClCompile Include="bmpScreen.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="AIPlayer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="FiveInARow.rc">
@@ -99,5 +105,16 @@
     <Media Include="..\..\..\..\..\..\FiveInARow111\FiveInARow\111.wav">
       <Filter>资源文件</Filter>
     </Media>
+    <Media Include="res\background_music.wav">
+      <Filter>资源文件</Filter>
+    </Media>
+    <Media Include="res\drop.wav">
+      <Filter>资源文件</Filter>
+    </Media>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\bk1.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>

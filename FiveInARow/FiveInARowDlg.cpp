@@ -5,6 +5,7 @@
 #include "bmpScreen.h"
 #include <Windows.h>
 #include <mmsystem.h>			  //播放音乐头文件
+#include "AIPlayer.h"	//引入AI
 #pragma comment(lib, "winmm.lib") // 播放音乐库文件
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -87,6 +88,8 @@ ON_BN_CLICKED(IDC_BUTTON_Screenshot, &CFiveInARowDlg::OnBnClickedButtonScreensho
 ON_MESSAGE(MM_MCINOTIFY, &CFiveInARowDlg::OnMciNotify)
 ON_BN_CLICKED(IDC_BUTTON_SaveGame, &CFiveInARowDlg::OnBnClickedButtonSavegame)
 ON_BN_CLICKED(IDC_BUTTON_LoadGame, &CFiveInARowDlg::OnBnClickedButtonLoadgame)
+ON_BN_CLICKED(IDC_BUTTON_StartAI, &CFiveInARowDlg::OnBnClickedButtonStartai)
+ON_BN_CLICKED(IDC_BUTTON_CloseAI, &CFiveInARowDlg::OnBnClickedButtonCloseai)
 END_MESSAGE_MAP()
 BOOL CFiveInARowDlg::OnInitDialog()
 {
@@ -242,43 +245,63 @@ void CFiveInARowDlg::OnLButtonUp(UINT nFlags, CPoint point)
 		return;
 	}
 	int r = m_Manager.Add(point.x, point.y);
-	if (r == 0)
-	{
-		sndPlaySound(MAKEINTRESOURCE(IDR_WAVE2), SND_ASYNC | SND_RESOURCE);
-		CClientDC dc(this);
-		m_Manager.Show(&dc);
-		if (m_Manager.GameOver())
-		{
-			KillTimer(1);
-			CString csTemp;
-			if (m_Manager.GetWinner() == WHITE)
-				csTemp.Format("白子胜");
-			else
-				csTemp.Format("黑子胜");
-			m_bState = false;
-			CClientDC dc(this);
-			CFont *pOldFont = dc.SelectObject(&m_FontOver);
-			int OLdBkMode = dc.GetBkMode();
-			COLORREF OldColor, NewColor1 = RGB(60, 60, 60), NewColor2 = RGB(250, 50, 50);
-			dc.SetBkMode(TRANSPARENT);
-			OldColor = dc.SetTextColor(NewColor1);
-			dc.TextOut(334, 54, csTemp);
-			dc.SetTextColor(NewColor2);
-			dc.TextOut(330, 50, csTemp);
+	if (r != 0) {
+		if (r == 1) AfxMessageBox("请在棋盘交叉点落子");
+		else if (r == 2) AfxMessageBox("不可以重复落子");
+		CDialogEx::OnLButtonUp(nFlags, point);
+		return;
+	}
 
-			dc.SetTextColor(OldColor);
-			dc.SetBkMode(OLdBkMode);
-			dc.SelectObject(pOldFont);
+
+	sndPlaySound(MAKEINTRESOURCE(IDR_WAVE2), SND_ASYNC | SND_RESOURCE);
+	CClientDC dc(this);
+	m_Manager.Show(&dc);
+
+	if (m_Manager.GameOver()) {
+		HandleGameOver();
+		return;
+	}
+
+	if (AIflag) {
+		// 电脑落子（仅当游戏未结束）
+		Sleep(200); // 模拟思考
+		CPoint aiMove = ai.GetNextMove(m_Manager);
+		if (aiMove.x >= 0) {
+			CPoint pixelPos(
+				CChess::m_dx + aiMove.x * CChess::m_d + CChess::m_d * 0.5,
+				CChess::m_dy + aiMove.y * CChess::m_d + CChess::m_d * 0.5
+			);
+			m_Manager.Add(pixelPos.x, pixelPos.y);
+			m_Manager.Show(&dc);
+			if (m_Manager.GameOver()) {
+				HandleGameOver();
+			}
 		}
 	}
-	if (r == 1)
-		AfxMessageBox("请在棋盘交叉点落子");
-	else if (r == 2)
-		AfxMessageBox("不可以重复落子");
-	CDialogEx::OnLButtonUp(nFlags, point);
 }
 
+void CFiveInARowDlg::HandleGameOver() {
+	KillTimer(1);
+	CString csTemp;
+	if (m_Manager.GetWinner() == WHITE)
+		csTemp.Format("白子胜");
+	else
+		csTemp.Format("黑子胜");
+	m_bState = false;
+	CClientDC dc(this);
+	CFont* pOldFont = dc.SelectObject(&m_FontOver);
+	int OLdBkMode = dc.GetBkMode();
+	COLORREF OldColor, NewColor1 = RGB(60, 60, 60), NewColor2 = RGB(250, 50, 50);
+	dc.SetBkMode(TRANSPARENT);
+	OldColor = dc.SetTextColor(NewColor1);
+	dc.TextOut(334, 54, csTemp);
+	dc.SetTextColor(NewColor2);
+	dc.TextOut(330, 50, csTemp);
 
+	dc.SetTextColor(OldColor);
+	dc.SetBkMode(OLdBkMode);
+	dc.SelectObject(pOldFont);
+}
 void CFiveInARowDlg::OnTimer(UINT_PTR nIDEvent)
 {
 	switch (nIDEvent)
@@ -359,14 +382,12 @@ void CFiveInARowDlg::OnBnClickedButtonPlaymusic()
 
 void CFiveInARowDlg::OnBnClickedButtonStopmusic()
 {
-	// TODO: 在此添加控件通知处理程序代码
 	mciSendString(_T("stop BGM"), nullptr, 0, nullptr);
 	mciSendString(_T("close BGM"), nullptr, 0, nullptr);
 }
 
 void CFiveInARowDlg::OnBnClickedButtonWithdraw()
 {
-	// TODO: 在此添加控件通知处理程序代码
 	m_Manager.m_nChess--;											  // 让最大落子数减1
 	m_Manager.m_Color = (m_Manager.m_Color == WHITE ? BLACK : WHITE); // 改变当前即将落子的颜色
 	Invalidate();													  // 刷新当前界面 调用onpaint重绘
@@ -375,7 +396,6 @@ void CFiveInARowDlg::OnBnClickedButtonWithdraw()
 
 void CFiveInARowDlg::OnBnClickedButtonQuit()
 {
-	// TODO: 在此添加控件通知处理程序代码
 	int iRet = AfxMessageBox("要退出程序吗？单击“确定”按钮退出，单击“取消”按钮继续运行！", MB_OKCANCEL | MB_ICONQUESTION);
 	if (iRet == IDOK)
 
@@ -384,7 +404,6 @@ void CFiveInARowDlg::OnBnClickedButtonQuit()
 
 void CFiveInARowDlg::OnBnClickedButtonScreenshot()
 {
-	// TODO: 在此添加控件通知处理程序代码
 	// 创建 BmpScreen 类对象
 	bmpScreen screen;
 	// 调用 screenShot 函数进行截图，并保存到文件中。截图的大小是 1000x800 像素，位置是屏幕左上角的（0, 0）处
@@ -468,4 +487,14 @@ void CFiveInARowDlg::OnBnClickedButtonLoadgame()
 			AfxMessageBox(_T("加载失败。"));
 		}
 	}
+}
+
+void CFiveInARowDlg::OnBnClickedButtonStartai()
+{
+	AIflag = true;
+}
+
+void CFiveInARowDlg::OnBnClickedButtonCloseai()
+{
+	AIflag = false;
 }

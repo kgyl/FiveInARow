@@ -107,6 +107,7 @@
     <None Include="res\mask.bmp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AIPlayer.h" />
     <ClInclude Include="bmpScreen.h" />
     <ClInclude Include="CChess.h" />
     <ClInclude Include="CChessManager.h" />
@@ -117,6 +118,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AIPlayer.cpp" />
     <ClCompile Include="bmpScreen.cpp" />
     <ClCompile Include="CChess.cpp" />
     <ClCompile Include="CChessManager.cpp" />
