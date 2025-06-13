@@ -31,6 +31,37 @@ int CChessManager::Add(int x, int y)
 	m_Color = (m_Color == WHITE ? BLACK : WHITE);
 	return 0;
 }
+
+void CChessManager::SaveGame(CString path, int time, bool state)
+{
+	CFile file;
+	if (file.Open(path, CFile::modeCreate | CFile::modeWrite))
+	{
+		file.Write(&m_nChess, sizeof(int));
+		file.Write(&m_Color, sizeof(COLOR));
+		file.Write(m_aChess, sizeof(CChess) * m_nChess);
+		file.Write(&time, sizeof(int));     // 保存时间
+		file.Write(&state, sizeof(bool));   // 保存状态
+		file.Close();
+	}
+}
+
+bool CChessManager::LoadGame(CString path, int& time, bool& state)
+{
+	CFile file;
+	if (file.Open(path, CFile::modeRead))
+	{
+		file.Read(&m_nChess, sizeof(int));
+		file.Read(&m_Color, sizeof(COLOR));
+		file.Read(m_aChess, sizeof(CChess) * m_nChess);
+		file.Read(&time, sizeof(int));     // 读取时间
+		file.Read(&state, sizeof(bool));   // 读取状态
+		file.Close();
+		return true;
+	}
+	return false;
+}
+
 void CChessManager::Show(CDC* pDC)
 {
 	for (int i = 0; i < m_nChess; i++)

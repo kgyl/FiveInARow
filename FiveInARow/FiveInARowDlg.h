@@ -36,4 +36,6 @@ public:
 	afx_msg void OnBnClickedButtonWithdraw();
 	afx_msg void OnBnClickedButtonQuit();
 	afx_msg void OnBnClickedButtonScreenshot();
+	afx_msg void OnBnClickedButtonSavegame();
+	afx_msg void OnBnClickedButtonLoadgame();
 };

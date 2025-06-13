@@ -85,6 +85,8 @@ ON_BN_CLICKED(IDC_BUTTON_Withdraw, &CFiveInARowDlg::OnBnClickedButtonWithdraw)
 ON_BN_CLICKED(IDC_BUTTON_Quit, &CFiveInARowDlg::OnBnClickedButtonQuit)
 ON_BN_CLICKED(IDC_BUTTON_Screenshot, &CFiveInARowDlg::OnBnClickedButtonScreenshot)
 ON_MESSAGE(MM_MCINOTIFY, &CFiveInARowDlg::OnMciNotify)
+ON_BN_CLICKED(IDC_BUTTON_SaveGame, &CFiveInARowDlg::OnBnClickedButtonSavegame)
+ON_BN_CLICKED(IDC_BUTTON_LoadGame, &CFiveInARowDlg::OnBnClickedButtonLoadgame)
 END_MESSAGE_MAP()
 BOOL CFiveInARowDlg::OnInitDialog()
 {
@@ -399,4 +401,44 @@ void CFiveInARowDlg::OnBnClickedButtonIntroduction()
 {
 	CAboutDlg dlg;
 	dlg.DoModal();
+}
+//保存游戏
+void CFiveInARowDlg::OnBnClickedButtonSavegame()
+{
+	CFileDialog dlg(FALSE, _T("sav"), _T("game.sav"), OFN_OVERWRITEPROMPT, _T("存档文件 (*.sav)|*.sav||"));
+	if (dlg.DoModal() == IDOK)
+	{
+		m_Manager.SaveGame(dlg.GetPathName(), m_iTime, m_bState);
+		AfxMessageBox(_T("游戏已保存。"));
+	}
+}
+
+//加载游戏
+void CFiveInARowDlg::OnBnClickedButtonLoadgame()
+{
+	CFileDialog dlg(TRUE, _T("sav"), NULL, OFN_FILEMUSTEXIST, _T("存档文件 (*.sav)|*.sav||"));
+	if (dlg.DoModal() == IDOK)
+	{
+		int savedTime;
+		bool savedState;
+		if (m_Manager.LoadGame(dlg.GetPathName(), savedTime, savedState))
+		{
+			m_iTime = savedTime;
+			m_bState = savedState;
+
+			// 若读取状态为进行中则重新计时器
+			if (m_bState)
+				SetTimer(1, 1000, NULL);
+			else
+				KillTimer(1);
+
+			Invalidate();
+			UpdateWindow();
+			AfxMessageBox(_T("游戏已加载。"));
+		}
+		else
+		{
+			AfxMessageBox(_T("加载失败。"));
+		}
+	}
 }
