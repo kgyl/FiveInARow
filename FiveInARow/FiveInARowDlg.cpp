@@ -146,29 +146,35 @@ void CFiveInARowDlg::OnPaint()
     }
     else
     {
-        CPaintDC dc(this);
-        CRect rect;
-        GetClientRect(&rect);
-        
-        if (m_hasCustomBk && m_bkImage.IsNull() == FALSE)
-        {
-            m_bkImage.StretchBlt(dc.GetSafeHdc(), 0, 0, rect.Width(), rect.Height(), SRCCOPY);
-        }
-        else
-        {
-			// 默认背景图（从资源或路径加载）
+		CPaintDC dc(this);
+		CRect rect;
+		GetClientRect(&rect);
+
+		// 创建内存 DC，做双缓冲
+		CDC memDC;
+		memDC.CreateCompatibleDC(&dc);
+		CBitmap memBitmap;
+		memBitmap.CreateCompatibleBitmap(&dc, rect.Width(), rect.Height());
+		CBitmap* pOldBitmap = memDC.SelectObject(&memBitmap);
+
+		// 背景绘制
+		if (m_hasCustomBk && m_bkImage.IsNull() == FALSE)
+		{
+			m_bkImage.StretchBlt(memDC.GetSafeHdc(), 0, 0, rect.Width(), rect.Height(), SRCCOPY);
+		}
+		else
+		{
 			CImage defaultBk;
 			HRESULT hr = defaultBk.Load(_T("res\\IMG_202506095120_1024x768.jpg"));  // 或直接资源 ID
-
 			if (SUCCEEDED(hr))
 			{
-				defaultBk.StretchBlt(dc.GetSafeHdc(), 0, 0, rect.Width(), rect.Height(), SRCCOPY);
+				defaultBk.StretchBlt(memDC.GetSafeHdc(), 0, 0, rect.Width(), rect.Height(), SRCCOPY);
 			}
 			else
 			{
 				AfxMessageBox(_T("默认背景图像加载失败！"));
 			}
-        }
+		}
 
 		// 2. 绘制棋盘线（网格）
 		double d = CChess::m_d;
@@ -176,47 +182,51 @@ void CFiveInARowDlg::OnPaint()
 		int dy = CChess::m_dy + d * 0.5;
 		int gridSize = 15;
 
-		CPen pen(PS_SOLID, 3, RGB(0, 0, 0)); // 黑色实线
-		CPen* pOldPen = dc.SelectObject(&pen);
+		CPen pen(PS_SOLID, 3, RGB(0, 0, 0));
+		CPen* pOldPen = memDC.SelectObject(&pen);
 
 		// 横线
 		for (int i = 0; i < gridSize; ++i)
 		{
 			int y = dy + i * d;
-			dc.MoveTo(dx, y);
-			dc.LineTo(dx + (gridSize - 1) * d, y);
+			memDC.MoveTo(dx, y);
+			memDC.LineTo(dx + (gridSize - 1) * d, y);
 		}
 
 		// 竖线
 		for (int j = 0; j < gridSize; ++j)
 		{
 			int x = dx + j * d;
-			dc.MoveTo(x, dy);
-			dc.LineTo(x, dy + (gridSize - 1) * d);
+			memDC.MoveTo(x, dy);
+			memDC.LineTo(x, dy + (gridSize - 1) * d);
 		}
-
-		dc.SelectObject(pOldPen);
+		memDC.SelectObject(pOldPen);
 		pen.DeleteObject();
 
-        m_Manager.Show(&dc);
+		// 绘制棋子
+		m_Manager.Show(&memDC);
 
-
-		// 4. 添加时钟绘制（补充）
+		// 时钟绘制（双方）
 		// 黑方计时
 		CString csBlack;
 		csBlack.Format("黑方: %04d", m_iTimeBlack);
-		dc.SetBkMode(TRANSPARENT);
-		dc.SetTextColor(RGB(0, 0, 0));
-		CFont* pOldFont = dc.SelectObject(&m_FontTimer);
-		dc.TextOut(820, 60, csBlack);
+		memDC.SetBkMode(TRANSPARENT);
+		memDC.SetTextColor(RGB(0, 0, 0));
+		CFont* pOldFont = memDC.SelectObject(&m_FontTimer);
+		memDC.TextOut(820, 60, csBlack);
 
 		// 白方计时
 		CString csWhite;
 		csWhite.Format("白方: %04d", m_iTimeWhite);
-		dc.SetTextColor(RGB(215, 213, 203));
-		dc.TextOut(820, 20, csWhite);
-		dc.SelectObject(pOldFont);
+		memDC.SetTextColor(RGB(215, 213, 203));
+		memDC.TextOut(820, 20, csWhite);
+		memDC.SelectObject(pOldFont);
 
+		// 将内存 DC 显示到屏幕
+		dc.BitBlt(0, 0, rect.Width(), rect.Height(), &memDC, 0, 0, SRCCOPY);
+		memDC.SelectObject(pOldBitmap);
+		memDC.DeleteDC();
+		memBitmap.DeleteObject();
         CDialogEx::OnPaint();
     }
 }
