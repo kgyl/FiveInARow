@@ -32,7 +32,7 @@ int CChessManager::Add(int x, int y)
 	return 0;
 }
 
-void CChessManager::SaveGame(CString path, int time, bool state)
+void CChessManager::SaveGame(CString path, int timeBlack, int timeWhite, bool state)
 {
 	CFile file;
 	if (file.Open(path, CFile::modeCreate | CFile::modeWrite))
@@ -40,13 +40,14 @@ void CChessManager::SaveGame(CString path, int time, bool state)
 		file.Write(&m_nChess, sizeof(int));
 		file.Write(&m_Color, sizeof(COLOR));
 		file.Write(m_aChess, sizeof(CChess) * m_nChess);
-		file.Write(&time, sizeof(int));     // 保存时间
+		file.Write(&timeBlack, sizeof(int));  // 保存黑方时间
+		file.Write(&timeWhite, sizeof(int));  // 保存白方时间
 		file.Write(&state, sizeof(bool));   // 保存状态
 		file.Close();
 	}
 }
 
-bool CChessManager::LoadGame(CString path, int& time, bool& state)
+bool CChessManager::LoadGame(CString path, int& timeBlack, int& timeWhite, bool& state)
 {
 	CFile file;
 	if (file.Open(path, CFile::modeRead))
@@ -54,7 +55,8 @@ bool CChessManager::LoadGame(CString path, int& time, bool& state)
 		file.Read(&m_nChess, sizeof(int));
 		file.Read(&m_Color, sizeof(COLOR));
 		file.Read(m_aChess, sizeof(CChess) * m_nChess);
-		file.Read(&time, sizeof(int));     // 读取时间
+		file.Read(&timeBlack, sizeof(int));   // 读取黑方时间
+		file.Read(&timeWhite, sizeof(int));   // 读取白方时间
 		file.Read(&state, sizeof(bool));   // 读取状态
 		file.Close();
 		return true;

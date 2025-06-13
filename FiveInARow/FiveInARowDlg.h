@@ -7,6 +7,8 @@ class CFiveInARowDlg : public CDialogEx
 	CFont m_FontTimer;
 	CFont m_FontOver;
 	int m_iTime;
+	int m_iTimeBlack = 0;
+	int m_iTimeWhite = 0;
 	bool m_bState;
 	CImage m_bkImage;       // ±≥æ∞ÕºœÒ
 	bool m_hasCustomBk = false; //  «∑Ò“—º”‘ÿ±≥æ∞

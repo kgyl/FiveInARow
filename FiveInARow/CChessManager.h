@@ -17,8 +17,8 @@ class CChessManager
 public:
 	CChessManager();
 	~CChessManager();
-	void SaveGame(CString path, int time, bool state);
-	bool LoadGame(CString path, int& time, bool& state);
+	void SaveGame(CString path, int timeBlack, int timeWhite, bool state);
+	bool LoadGame(CString path, int& timeBlack, int& timeWhite, bool& state);
 	void NewGame() { m_nChess = 0; m_Color = BLACK; }
 	bool Xy2Xy(int x0, int y0, int &x1, int &y1);
 	int Add(int x, int y);

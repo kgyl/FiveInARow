@@ -113,6 +113,8 @@ BOOL CFiveInARowDlg::OnInitDialog()
 	m_FontOver.CreatePointFont(666, "微软雅黑", NULL);
 	m_bState = false;
 	m_iTime = 0;
+	m_iTimeBlack = 0;
+	m_iTimeWhite = 0;
 
 	return TRUE;
 }
@@ -200,12 +202,19 @@ void CFiveInARowDlg::OnPaint()
 
 
 		// 4. 添加时钟绘制（补充）
-		CFont* pOldFont = dc.SelectObject(&m_FontTimer);
-		CString csTemp;
-		csTemp.Format("%04d", m_iTime);
+		// 黑方计时
+		CString csBlack;
+		csBlack.Format("黑方: %04d", m_iTimeBlack);
 		dc.SetBkMode(TRANSPARENT);
-		dc.SetTextColor(RGB(150, 50, 50));
-		dc.TextOut(725, 20, csTemp);
+		dc.SetTextColor(RGB(0, 0, 0));
+		CFont* pOldFont = dc.SelectObject(&m_FontTimer);
+		dc.TextOut(820, 60, csBlack);
+
+		// 白方计时
+		CString csWhite;
+		csWhite.Format("白方: %04d", m_iTimeWhite);
+		dc.SetTextColor(RGB(215, 213, 203));
+		dc.TextOut(820, 20, csWhite);
 		dc.SelectObject(pOldFont);
 
         CDialogEx::OnPaint();
@@ -266,10 +275,19 @@ void CFiveInARowDlg::OnTimer(UINT_PTR nIDEvent)
 	{
 		case 1:
 		{
-			// 触发只更新时钟区域
-			m_iTime++;
-			CRect timeRect(725, 20, 800, 60); // 根据时钟文本宽度调整
-			InvalidateRect(&timeRect, TRUE);  // TRUE 表示重绘前清除背景
+			if (!m_bState)
+				return;
+
+			if (m_Manager.m_Color == BLACK)
+				m_iTimeBlack++;
+			else
+				m_iTimeWhite++;
+
+			// 只重绘计时区域
+			CRect blackRect(820, 60, 990, 100);
+			CRect whiteRect(820, 20, 990, 60);
+			InvalidateRect(&blackRect, TRUE);
+			InvalidateRect(&whiteRect, TRUE);  // TRUE 表示重绘前清除背景
 			UpdateWindow();                   // 立即触发 OnPaint 重绘
 			break;
 		}
@@ -393,6 +411,8 @@ void CFiveInARowDlg::OnBnClickedButtonNewgame()
 	m_Manager.NewGame();
 	Invalidate();
 	m_iTime = 0;
+	m_iTimeBlack = 0;
+	m_iTimeWhite = 0;
 	SetTimer(1, 1000, NULL);
 	m_bState = true;
 }
@@ -408,7 +428,7 @@ void CFiveInARowDlg::OnBnClickedButtonSavegame()
 	CFileDialog dlg(FALSE, _T("sav"), _T("game.sav"), OFN_OVERWRITEPROMPT, _T("存档文件 (*.sav)|*.sav||"));
 	if (dlg.DoModal() == IDOK)
 	{
-		m_Manager.SaveGame(dlg.GetPathName(), m_iTime, m_bState);
+		m_Manager.SaveGame(dlg.GetPathName(), m_iTimeBlack, m_iTimeWhite, m_bState);
 		AfxMessageBox(_T("游戏已保存。"));
 	}
 }
@@ -419,14 +439,11 @@ void CFiveInARowDlg::OnBnClickedButtonLoadgame()
 	CFileDialog dlg(TRUE, _T("sav"), NULL, OFN_FILEMUSTEXIST, _T("存档文件 (*.sav)|*.sav||"));
 	if (dlg.DoModal() == IDOK)
 	{
-		int savedTime;
 		bool savedState;
-		if (m_Manager.LoadGame(dlg.GetPathName(), savedTime, savedState))
+		if (m_Manager.LoadGame(dlg.GetPathName(), m_iTimeBlack, m_iTimeWhite, savedState))
 		{
-			m_iTime = savedTime;
 			m_bState = savedState;
 
-			// 若读取状态为进行中则重新计时器
 			if (m_bState)
 				SetTimer(1, 1000, NULL);
 			else
