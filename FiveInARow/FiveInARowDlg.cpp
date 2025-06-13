@@ -110,6 +110,7 @@ BOOL CFiveInARowDlg::OnInitDialog()
 	m_FontTimer.CreatePointFont(250, "Segoe UI Semibold", NULL);
 	m_FontOver.CreatePointFont(666, "微软雅黑", NULL);
 	m_bState = false;
+	m_iTime = 0;
 
 	return TRUE;
 }
@@ -194,6 +195,17 @@ void CFiveInARowDlg::OnPaint()
 		pen.DeleteObject();
 
         m_Manager.Show(&dc);
+
+
+		// 4. 添加时钟绘制（补充）
+		CFont* pOldFont = dc.SelectObject(&m_FontTimer);
+		CString csTemp;
+		csTemp.Format("%04d", m_iTime);
+		dc.SetBkMode(TRANSPARENT);
+		dc.SetTextColor(RGB(150, 50, 50));
+		dc.TextOut(725, 20, csTemp);
+		dc.SelectObject(pOldFont);
+
         CDialogEx::OnPaint();
     }
 }
@@ -250,22 +262,15 @@ void CFiveInARowDlg::OnTimer(UINT_PTR nIDEvent)
 {
 	switch (nIDEvent)
 	{
-	case 1:
-	{
-		CClientDC dc(this);
-		CFont *pOldFont;
-		pOldFont = dc.SelectObject(&m_FontTimer);
-		m_iTime++;
-		CString csTemp;
-		csTemp.Format("%04d ", m_iTime);
-		int OldBkMode = dc.GetBkMode();
-		COLORREF OldColor, NewColor = RGB(150, 50, 50);
-		OldColor = dc.SetTextColor(NewColor);
-		dc.TextOut(725, 20, csTemp);
-		dc.SetTextColor(OldColor);
-		dc.SelectObject(pOldFont);
-		break;
-	}
+		case 1:
+		{
+			// 触发只更新时钟区域
+			m_iTime++;
+			CRect timeRect(725, 20, 800, 60); // 根据时钟文本宽度调整
+			InvalidateRect(&timeRect, TRUE);  // TRUE 表示重绘前清除背景
+			UpdateWindow();                   // 立即触发 OnPaint 重绘
+			break;
+		}
 	}
 	CDialogEx::OnTimer(nIDEvent);
 }
