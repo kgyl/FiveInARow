@@ -6,10 +6,14 @@
 #include <Windows.h>
 #include <mmsystem.h>			  //播放音乐头文件
 #include "AIPlayer.h"	//引入AI
+#include "CLoginDlg.h"
+#include "CRankDialog.h"
 #pragma comment(lib, "winmm.lib") // 播放音乐库文件
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+
+//关于对话框
 class CAboutDlg : public CDialogEx
 {
 public:
@@ -24,6 +28,8 @@ protected:
 	virtual void DoDataExchange(CDataExchange *pDX); //
 protected:
 	DECLARE_MESSAGE_MAP()
+public:
+	afx_msg void OnBnClickedOk();
 };
 CAboutDlg::CAboutDlg() : CDialogEx(CAboutDlg::IDD)
 {
@@ -34,6 +40,7 @@ void CAboutDlg::DoDataExchange(CDataExchange *pDX)
 }
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
     ON_WM_PAINT()
+	ON_BN_CLICKED(IDOK, &CAboutDlg::OnBnClickedOk)
 END_MESSAGE_MAP()
 
 // 关于对话框背景绘制
@@ -60,6 +67,14 @@ void CAboutDlg::OnPaint()
 
     memDC.SelectObject(pOldBitmap);
 }
+void CAboutDlg::OnBnClickedOk()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	CDialogEx::OnOK();
+}
+
+
+//主对话框
 
 
 CFiveInARowDlg::CFiveInARowDlg(CWnd *pParent /*=NULL*/)
@@ -90,6 +105,8 @@ ON_BN_CLICKED(IDC_BUTTON_SaveGame, &CFiveInARowDlg::OnBnClickedButtonSavegame)
 ON_BN_CLICKED(IDC_BUTTON_LoadGame, &CFiveInARowDlg::OnBnClickedButtonLoadgame)
 ON_BN_CLICKED(IDC_BUTTON_StartAI, &CFiveInARowDlg::OnBnClickedButtonStartai)
 ON_BN_CLICKED(IDC_BUTTON_CloseAI, &CFiveInARowDlg::OnBnClickedButtonCloseai)
+ON_BN_CLICKED(IDC_BUTTON_Rank, &CFiveInARowDlg::OnBnClickedButtonRank)
+ON_BN_CLICKED(IDC_BUTTON_User, &CFiveInARowDlg::OnBnClickedButtonUser)
 END_MESSAGE_MAP()
 BOOL CFiveInARowDlg::OnInitDialog()
 {
@@ -118,7 +135,7 @@ BOOL CFiveInARowDlg::OnInitDialog()
 	m_iTime = 0;
 	m_iTimeBlack = 0;
 	m_iTimeWhite = 0;
-
+	m_userManager.Load();
 	return TRUE;
 }
 void CFiveInARowDlg::OnSysCommand(UINT nID, LPARAM lParam)
@@ -237,6 +254,7 @@ HCURSOR CFiveInARowDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
+
 void CFiveInARowDlg::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	if (!m_bState)
@@ -264,29 +282,47 @@ void CFiveInARowDlg::OnLButtonUp(UINT nFlags, CPoint point)
 
 	if (AIflag) {
 		// 电脑落子（仅当游戏未结束）
-		Sleep(200); // 模拟思考
-		CPoint aiMove = ai.GetNextMove(m_Manager);
-		if (aiMove.x >= 0) {
-			CPoint pixelPos(
-				CChess::m_dx + aiMove.x * CChess::m_d + CChess::m_d * 0.5,
-				CChess::m_dy + aiMove.y * CChess::m_d + CChess::m_d * 0.5
-			);
-			m_Manager.Add(pixelPos.x, pixelPos.y);
-			m_Manager.Show(&dc);
-			if (m_Manager.GameOver()) {
-				HandleGameOver();
-			}
+		AIPlay();
+	}
+}
+
+void CFiveInARowDlg::AIPlay() {
+	CClientDC dc(this);
+	m_Manager.Show(&dc);
+	CPoint aiMove = ai.GetNextMove(m_Manager);
+	if (aiMove.x >= 0) {
+		CPoint pixelPos(
+			CChess::m_dx + aiMove.x * CChess::m_d + CChess::m_d * 0.5,
+			CChess::m_dy + aiMove.y * CChess::m_d + CChess::m_d * 0.5
+		);
+		m_Manager.Add(pixelPos.x, pixelPos.y);
+		m_Manager.Show(&dc);
+		if (m_Manager.GameOver()) {
+			HandleGameOver();
 		}
 	}
 }
 
+
 void CFiveInARowDlg::HandleGameOver() {
 	KillTimer(1);
 	CString csTemp;
-	if (m_Manager.GetWinner() == WHITE)
-		csTemp.Format("白子胜");
-	else
-		csTemp.Format("黑子胜");
+	COLOR winner = m_Manager.GetWinner();
+
+	// 记录玩家胜负记录
+	if (m_loggedIn) {
+		if ((winner == BLACK && m_currentUser.wins % 2 == 0) || (winner == WHITE && m_currentUser.wins % 2 == 1)) {
+			m_currentUser.wins++;
+		}
+		else {
+			m_currentUser.losses++;
+		}
+		m_currentUser.totalTime += m_iTime;
+		m_userManager.UpdateUser(m_currentUser);  // 后续添加这个函数
+		m_userManager.Save();
+	}
+
+	csTemp.Format("%s胜", winner == WHITE ? _T("白子") : _T("黑子"));
 	m_bState = false;
 	CClientDC dc(this);
 	CFont* pOldFont = dc.SelectObject(&m_FontOver);
@@ -492,9 +528,28 @@ void CFiveInARowDlg::OnBnClickedButtonLoadgame()
 void CFiveInARowDlg::OnBnClickedButtonStartai()
 {
 	AIflag = true;
+	if (m_Manager.m_Color == WHITE) {
+		AIPlay();
+	}
 }
 
 void CFiveInARowDlg::OnBnClickedButtonCloseai()
 {
 	AIflag = false;
+}
+
+void CFiveInARowDlg::OnBnClickedButtonRank()
+{
+	CRankDialog dlg(&m_userManager);
+	dlg.DoModal();
+}
+
+void CFiveInARowDlg::OnBnClickedButtonUser()
+{
+	CLoginDlg dlg(&m_userManager);
+	if (dlg.DoModal() == IDOK) {
+		m_currentUser = dlg.m_loggedInUser;
+		AfxMessageBox(_T("欢迎，") + m_currentUser.username);
+		m_loggedIn = true;
+	}
 }

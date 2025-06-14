@@ -1,6 +1,8 @@
 #pragma once
 #include"CChessManager.h"
 #include "AIPlayer.h"	//引入AI
+#include "UserManager.h" //引入用户管理
+#include "UserInfo.h"   //引入用户信息
 #include <atlimage.h>
 class CFiveInARowDlg : public CDialogEx
 {
@@ -15,6 +17,9 @@ class CFiveInARowDlg : public CDialogEx
 	bool m_hasCustomBk = false; // 是否已加载背景
 	bool AIflag = false;	//是否启用AI
 	AIPlayer ai;
+	UserManager m_userManager;
+	bool m_loggedIn = false;     // 是否已登录（建议添加）
+	UserInfo m_currentUser;
 public:
 	CFiveInARowDlg(CWnd* pParent = NULL);	
 	enum { IDD = IDD_FIVEINAROW_DIALOG };
@@ -32,6 +37,7 @@ public:
 	//bool NewGame(int x,int y);
 	void playMusic();
 	void HandleGameOver();
+	void AIPlay();
 	afx_msg LRESULT OnMciNotify(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnBnClickedButtonNewgame();
@@ -46,4 +52,6 @@ public:
 	afx_msg void OnBnClickedButtonLoadgame();
 	afx_msg void OnBnClickedButtonStartai();
 	afx_msg void OnBnClickedButtonCloseai();
+	afx_msg void OnBnClickedButtonRank();
+	afx_msg void OnBnClickedButtonUser();
 };
